@@ -1,0 +1,9 @@
+{
+  "name": "shakala-bakery-pos",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": { "build": "node -e \"console.log('Static PWA: no bundling required')\"", "android:add": "npx cap add android", "android:sync": "npx cap sync android" },
+  "dependencies": { "@capacitor/core": "^8.0.0", "@capacitor/android": "^8.0.0" },
+  "devDependencies": { "@capacitor/cli": "^8.0.0", "typescript": "^5.8.0" }
+}

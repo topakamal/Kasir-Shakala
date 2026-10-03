@@ -1,0 +1,52 @@
+name: Build Shakala Bakery APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Prepare web assets
+        run: |
+          mkdir -p www/src www/public
+          cp index.html app.js manifest.webmanifest sw.js logo-shakala.jpg www/
+          cp src/styles.css src/extra.css www/src/
+          cp public/logo-shakala.jpg www/public/
+      - name: Add Android platform
+        run: npx cap add android
+      - name: Apply native printer bridge
+        run: |
+          mkdir -p android/app/src/main/java/id/shakala/bakery/pos
+          cp native/ClassicPrinterPlugin.java android/app/src/main/java/id/shakala/bakery/pos/ClassicPrinterPlugin.java
+          cp native/MainActivity.java android/app/src/main/java/id/shakala/bakery/pos/MainActivity.java
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/src/main/AndroidManifest.xml')
+          s=p.read_text()
+          s=s.replace('<application', '<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />\n    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />\n    <application', 1)
+          p.write_text(s)
+          PY
+      - name: Sync Capacitor
+        run: npx cap sync android
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: shakala-bakery-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
